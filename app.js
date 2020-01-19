@@ -4,7 +4,11 @@ const Employee = require("./lib/employee");
 const Engineer = require("./lib/engineer");
 const Intern = require("./lib/intern");
 const Manager = require("./lib/manager");
+const path = require("path");
+const render = require("./lib/htmlRenderer");
+const outputPath = path.resolve(__dirname, "output", "team.html");
 
+const employees = [];
 
 let managerAuth = null;
 let database;
@@ -31,7 +35,6 @@ const init = () => {
     })
 }
 
-
 function createEmployee (){
     inquirer.prompt([{
         message:"Please enter employee name",
@@ -52,26 +55,30 @@ function createEmployee (){
     let cond;
     switch(answer.role){
         case "Manager":
-            cond= ['What is your phone number?', 'Creating new manager, please enter password', Manager]
+            cond= ['What is your phone number?', Manager]
             break;
         case "Engineer":
-            cond = ['Please enter your GitHub username', "What is your manager's ID", Engineer]
+            cond = ['Please enter your GitHub username', Engineer]
             break;
         case "Intern":
-            cond = ['What school are you in?', "What is your manager's ID?", Intern]
+            cond = ['What school are you in?', Intern]
             break;
     }
     inquirer.prompt([{
         message: cond[0],
         name: 'uniq',
         type: 'input'
-    },{
-        message: cond[1],
-        name: 'manager',
-        type: 'input'
     }]).then(res=>{
-       let newEmp = new cond[2](answer.name, database.length+1, answer.email, res.uniq, res.manager )
-        console.log(newEmp)
+       let newEmp = new cond[1](answer.name, database.length+1, answer.email, res.uniq);
+        console.log(`You have created the following eployee:
+        Name: ${newEmp.name}
+        ID: ${newEmp.id}
+        Email: ${newEmp.email}
+        Role: ${newEmp.getRole()}`);
+
+        employees.push(newEmp);
+        console.log(employees);
+        render(employees);
     })
 })
 }
