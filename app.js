@@ -1,40 +1,12 @@
 const inquirer = require("inquirer");
 const fs = require("fs");
-const Employee = require("./lib/employee");
 const Engineer = require("./lib/engineer");
 const Intern = require("./lib/intern");
 const Manager = require("./lib/manager");
 const path = require("path");
 const render = require("./lib/htmlRenderer");
-const outputPath = path.resolve(__dirname, "output", "team.html");
-
+const init = () => createEmployee();
 const employees = [];
-
-let managerAuth = null;
-let database;
-
-const init = () => {
-    database = []
-    inquirer.prompt({
-        message: "select a function",
-        name: "action",
-        type: "list",
-        choices: ['add employee', 'remove employee','generate team']
-    }).then(res=>{
-        switch (res.action){
-            case 'add employee':
-                createEmployee();
-                break;
-            case 'remove employee':
-                removeEmployee();
-                break;
-            case 'generate team':
-                generateTeam();
-                break;
-        }
-    })
-}
-
 function createEmployee (){
     inquirer.prompt([{
         message:"Please enter employee name",
@@ -50,7 +22,13 @@ function createEmployee (){
         message:"Please enter employee email",
         name:"email",
         type: "input",
-    }
+        validate: input => {
+            if (input.includes("@") && input[input.length - 4] === ".") {
+              return true;
+            } else  {
+              console.log('\n Must be a valid email!');
+              return false;
+    }}}
 ]).then(answer=>{
     let cond;
     switch(answer.role){
@@ -67,19 +45,31 @@ function createEmployee (){
     inquirer.prompt([{
         message: cond[0],
         name: 'uniq',
-        type: 'input'
-    }]).then(res=>{
-       let newEmp = new cond[1](answer.name, database.length+1, answer.email, res.uniq);
-        console.log(`You have created the following eployee:
-        Name: ${newEmp.name}
-        ID: ${newEmp.id}
-        Email: ${newEmp.email}
-        Role: ${newEmp.getRole()}`);
-
-        employees.push(newEmp);
+        type: 'input',
+        // validate: input => {if (cond[1] === Manager && input(cond[0])===isNaN) {console.log("Must be a number!")};
+        // return false;}
+    },{
+        message: "Would you like to add another employee?",
+        name: "more",
+        type: "confirm"
+    }
+    ]).then(res=>{
+        if (res.more){
+            createEmployee();
+        };
+        const newEmp = new cond[1](answer.name, employees.length+1, answer.email, res.uniq);
+       employees.push(newEmp);
         console.log(employees);
-        render(employees);
+        createHTML();
     })
 })
+}
+function createHTML() {
+    const outputPath = path.resolve(__dirname, "output", "team.html");
+    fs.writeFile(outputPath, render(employees), function (err) {
+        if (err) {
+            throw err;
+        }
+    });
 }
 init();
